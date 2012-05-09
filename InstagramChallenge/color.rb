@@ -49,7 +49,11 @@ module Color
 
       d1, da, db = l1 - l2, a1 - a2, b1 -b2
 
-      dh = Math.sqrt((da * da) + (db * db) - (dc * dc))
+      if ((da * da) + (db * db) - (dc * dc)) < 0
+        dh = 0
+      else
+        dh = Math.sqrt((da * da) + (db * db) - (dc * dc))
+      end
 
       first, second, third = d1, dc / (1 + (0.045 * c1)), dh / (1 + (0.015 * c1))
         
