@@ -20,8 +20,6 @@ class Pixel
 end
 
 class Slice
-  include CompareColors
-
   def initialize(file)
     @slice = ChunkyPNG::Image.from_file(file)
   end
