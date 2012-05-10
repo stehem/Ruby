@@ -1,4 +1,4 @@
-module Color
+module CompareColors
 
     def rgb_to_xyz
       red, green, blue = @rgb
