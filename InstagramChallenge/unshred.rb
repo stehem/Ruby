@@ -14,13 +14,13 @@
 
 
 require 'chunky_png'
-require_relative 'color'
+require_relative 'compare_colors'
 require_relative 'enumerable'
  
 
 
 class Pixel
-  include Color
+  include CompareColors
 
   attr_accessor :rgb, :lab
 
@@ -31,8 +31,6 @@ class Pixel
 end
 
 class Slice
-  include Color
-
   def initialize(file)
     @slice = ChunkyPNG::Image.from_file(file)
   end
@@ -50,7 +48,7 @@ class Slice
 
   def self.distance_score(s1, s2)
     s1.edge_pixels(:end).zip(s2.edge_pixels(:start))
-      .map {|arr| Color.delta_e_94(arr[0], arr[1])}
+      .map {|arr| CompareColors.delta_e_94(arr[0], arr[1])}
       .reduce(:+).to_i
   end
 end
