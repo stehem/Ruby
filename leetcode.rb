@@ -50,7 +50,7 @@ class Array
 end
 
 
-def climbing_stairs(current=[[]], n=10, i=0)
+def climbing_stairs(n=10, current=[[]], i=0)
   if i == n
     current.map {|c| c.pop while c.reduce(:+) > n}
     current.reject! {|z| z.reduce(:+) != n}
@@ -60,7 +60,7 @@ def climbing_stairs(current=[[]], n=10, i=0)
     n1, n2 = x + [1], x + [2]
     [n1, n2].each {|f| acc << f} ; acc
   end
-  climbing_stairs(r, n, i+1)
+  climbing_stairs(n, r, i+1)
 end
 
 
@@ -118,12 +118,12 @@ describe "LeetCode" do
 
   it "Climbing Stairs" do
     # hello Fibonacci !!!
-    climbing_stairs([[]], 5, 0).must_equal(8)
-    climbing_stairs([[]], 6, 0).must_equal(13)
-    climbing_stairs([[]], 7, 0).must_equal(21)
-    climbing_stairs([[]], 11, 0).must_equal(144)
-    climbing_stairs([[]], 12, 0).must_equal(233)
-    climbing_stairs([[]], 13, 0).must_equal(377)
+    climbing_stairs(5).must_equal(8)
+    climbing_stairs(6).must_equal(13)
+    climbing_stairs(7).must_equal(21)
+    climbing_stairs(11).must_equal(144)
+    climbing_stairs(12).must_equal(233)
+    climbing_stairs(13).must_equal(377)
   end
 
   it "Combination Sum" do
