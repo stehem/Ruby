@@ -39,10 +39,13 @@ class Array
 
   # not using built in permutation cause too easy for this one...
   def combinations
-    each_with_index.map {|f,i| (self - [self[i]])
-      .map {|g| [f,g]} }
+    each_with_index.map do |f,i| 
+      a = self.dup
+      a.delete_at(i)
+      a.map {|g| [f,g]} 
+    end
       .reduce([]) {|acc, h| h.each {|i| acc << i} ; acc}
-      .map {|j| j.sort}.uniq
+      .map(&:sort).uniq
   end
 end
 
@@ -58,6 +61,31 @@ def climbing_stairs(current=[[]], n=10, i=0)
     [n1, n2].each {|f| acc << f} ; acc
   end
   climbing_stairs(r, n, i+1)
+end
+
+
+def container_water(coords)
+  coords.permutation(2).to_a
+    .map(&:sort).uniq
+    .map {|cont| {cont => {
+      :height => cont.sort_by(&:last).first.last, 
+      :width => cont.sort_by(&:first).last.first - cont.sort_by(&:first).first.first
+    }}}
+    .map {|cont| cont.map {|k,v| {k => v[:height] * v[:width]}}.first}
+    .sort_by(&:values)
+    .reverse.first
+end
+
+
+def countsay(n, res="1", c=1)
+  return res if c == n
+  a = res.split("")
+  i, count, step = 0, 1, ""
+  while i < a.size
+    i+=1 and count+=1 while a[i] == a[i+1] if a[i] == a[i+1]
+    step << "#{count}#{a[i]}" and i+=1 and count = 1
+  end
+  countsay(n, step, c+1)
 end
 
 
@@ -108,6 +136,18 @@ describe "LeetCode" do
 
   it "Combinations" do
     [1,2,3,4].combinations.must_equal([[1, 2], [1, 3], [1, 4], [2, 3], [2, 4], [3, 4]])
+  end
+
+  it "Container With Most Water" do
+    container_water([[65, 24], [53, 15], [89, 33], [68, 22], [60, 80]]).must_equal({[[60, 80], [89, 33]]=>957})
+  end
+
+  it "Count And Say" do 
+    countsay(2).must_equal("11")
+    countsay(6).must_equal("312211")
+    countsay(7).must_equal("13112221")
+    countsay(8).must_equal("1113213211")
+    countsay(9).must_equal("31131211131221")
   end
 
 end
