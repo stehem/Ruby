@@ -47,6 +47,14 @@ class Array
       .reduce([]) {|acc, h| h.each {|i| acc << i} ; acc}
       .map(&:sort).uniq
   end
+
+  def missing_positive
+    a = sort.drop_while {|n| n <  0}
+    a.reduce(a[0]) do |acc, n| 
+      break acc if n != acc
+      acc += 1
+    end
+  end
 end
 
 
@@ -86,6 +94,59 @@ def countsay(n, res="1", c=1)
     step << "#{count}#{a[i]}" and i+=1 and count = 1
   end
   countsay(n, step, c+1)
+end
+
+
+# divide two integers without using / * and mod
+def divide(a,b)
+  i = 0
+  a -= b and i += 1 while a >= b
+  x, y = 0, 0
+  while a - y >= 0.01
+    x += 0.01 
+    y = x 
+    b.times {y += x} and y -= x
+  end
+  i + x
+end
+
+
+def parentheses(n)
+  a = ""
+  n.times {a << "()"}
+  a.split("")
+    .permutation(n*2).to_a
+    .map {|f| f.join("")}.uniq
+    .select {|f| not f =~ /\($|^\)/}
+    .delete_if {|f| f.gsub(/\(\)/,"") =~ /\)\(/ }
+end
+
+
+require 'matrix'
+# patching to allow mutability
+class Matrix 
+  def []=(i, j, x) 
+    @rows[i][j] = x 
+  end 
+end
+
+class String
+  # implementation of the Levenshtein algorithm described here http://www.merriampark.com/ld.htm
+  def levenshtein(t)
+    s, t = self.split(""), t.split("")
+    i, j = s.size, t.size
+    m = Matrix.build(j+1,i+1) {0}
+    (0..i).to_a.each {|f| m[0,f] = f}
+    (0..j).to_a.each {|f| m[f,0] = f}
+    (1..i).to_a.each do |col|
+      (1..j).to_a.each do |f|
+        cost = s[col-1] == t[f-1] ? 0 : 1
+        above, left, diag = m[f-1,col] + 1, m[f,col-1] + 1, m[f-1,col-1] + cost
+        m[f,col] = [above,left,diag].min
+      end
+    end
+    m[j,i]
+  end
 end
 
 
@@ -150,5 +211,36 @@ describe "LeetCode" do
     countsay(9).must_equal("31131211131221")
   end
 
+  it "Divide Two Integers" do
+    a = 11/3.to_f
+    assert_in_delta(a, divide(11,3), 0.01)
+    a = 47/12.to_f
+    assert_in_delta(a, divide(47,12), 0.01)
+    a = 234/67.to_f
+    assert_in_delta(a, divide(234,67), 0.01)
+    a = 1234/92.to_f
+    assert_in_delta(a, divide(1234,92), 0.01)
+  end  
+
+  it "Edit Distance" do
+    "kitten".levenshtein("sitting").must_equal(3)
+    "saturday".levenshtein("sunday").must_equal(3)
+    "meilenstein".levenshtein("levenshtein").must_equal(4)
+    "ruby".levenshtein("python").must_equal(6)
+    "alghorithn".levenshtein("algorithm").must_equal(2)
+  end
+
+  it "First Missing Positive" do
+    [1,2,0].missing_positive.must_equal(3)
+    [3,4,-1,1].missing_positive.must_equal(2)
+    [-23,-99,100,4,5,6,7,12,1000].missing_positive.must_equal(8)
+  end
+
+  it "Generate Parentheses" do
+    parentheses(3).must_equal(["()()()", "()(())", "(())()", "(()())", "((()))"])
+  end
+
 end
+
+
 
