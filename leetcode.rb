@@ -55,6 +55,24 @@ class Array
       acc += 1
     end
   end
+
+  def insert_interval(b)
+    a = map {|f| (f.first..f.last).to_a}
+    a << (b.first..b.last).to_a
+    a.sort_by!(&:first)
+    t = [].tap do |arr| 
+      a.each_with_index do |seq, i|
+        c = a.dup
+        c.delete_at(i)
+        c.each {|f| arr << seq if (seq & f).any?}
+      end
+    end
+    q = t.uniq.flatten
+    m = [q.min, q.max]
+    t.each {|f| a.delete(f)}
+    a << m
+    a.sort_by(&:first).map{|f| [f.first,f.last]}
+  end
 end
 
 
@@ -115,8 +133,9 @@ def parentheses(n)
   a = ""
   n.times {a << "()"}
   a.split("")
-    .permutation(n*2).to_a
+    .permutation(6).to_a
     .map {|f| f.join("")}.uniq
+    .select {|f| f.include?("()")}
     .select {|f| not f =~ /\($|^\)/}
     .delete_if {|f| f.gsub(/\(\)/,"") =~ /\)\(/ }
 end
@@ -148,6 +167,40 @@ class String
     m[j,i]
   end
 end
+
+
+
+class Integer
+  def to_roman
+    r = {
+      :th => {1 => "M"}, 
+      :hu => {0 => "", 1 => "C", 2 => "CC", 3 => "CCC", 4 => "CD", 
+        5 => "D", 6 => "DC", 7 => "DCC", 8 => "CCM", 9 => "CM",}, 
+      :te => {0 => "", 1 => "X", 2 => "XX", 3 => "XXX", 4 => "XL", 
+        5 => "L", 6 => "LX", 7 => "LXX", 8 => "XXC", 9 => "XC"}, 
+      :de => {0 => "", 1 => "I", 2 => "II", 3 => "III", 4 => "IV", 
+        5 => "V", 6 => "VI", 7 => "VII", 8 => "VIII", 9 => "IX"}}
+    a, res = to_s.split(""), ""
+    case self
+    when 1000..3999
+      a[0].to_i.times {res << r[:th][1]}
+      res << r[:hu][a[1].to_i]
+      res << r[:te][a[2].to_i]
+      res << r[:de][a[3].to_i]
+    when 100..999
+      res << r[:hu][a[0].to_i]
+      res << r[:te][a[1].to_i]
+      res << r[:de][a[2].to_i]
+    when 10..99
+      res << r[:te][a[0].to_i]
+      res << r[:de][a[1].to_i]
+    when 0..9
+      res << r[:de][a[0].to_i]
+    end
+    res
+  end
+end
+
 
 
 describe "LeetCode" do 
@@ -236,8 +289,17 @@ describe "LeetCode" do
     [-23,-99,100,4,5,6,7,12,1000].missing_positive.must_equal(8)
   end
 
-  it "Generate Parentheses" do
-    parentheses(3).must_equal(["()()()", "()(())", "(())()", "(()())", "((()))"])
+  it "Insert Interval" do
+    [[1,3],[6,9]].insert_interval([2,5]).must_equal([[1,5],[6,9]])
+    [[1,2],[3,5],[6,7],[8,10],[12,16]].insert_interval([4,9]).must_equal([[1,2],[3,10],[12,16]])
+  end
+
+  it "Integer To Roman" do
+    64.to_roman.must_equal("LXIV")
+    226.to_roman.must_equal("CCXXVI")
+    900.to_roman.must_equal("CM")
+    998.to_roman.must_equal("CMXCVIII")
+    1712.to_roman.must_equal("MDCCXII")
   end
 
 end
