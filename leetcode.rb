@@ -73,6 +73,20 @@ class Array
     a << m
     a.sort_by(&:first).map{|f| [f.first,f.last]}
   end
+
+  def jump_game(type=:std, res=[[0]], goal=self.size-1)
+    if res.any? {|f| f.last == goal}
+      return res.select {|f| f.last == goal}.first.size-1 if type == :min
+      return true
+    end
+    return false if res.empty?
+    next_ = lambda {|i| (i+1..i+self[i]).to_a}
+    next_a = lambda {|arr| next_.call(arr.last).map {|f| arr + [f]}}
+    next_res = res.reduce([]) do |acc,r|
+      next_a.call(r).each {|s| acc << s} ; acc
+    end
+    jump_game(type, next_res, goal)
+  end
 end
 
 
@@ -133,9 +147,8 @@ def parentheses(n)
   a = ""
   n.times {a << "()"}
   a.split("")
-    .permutation(6).to_a
+    .permutation(n*2).to_a
     .map {|f| f.join("")}.uniq
-    .select {|f| f.include?("()")}
     .select {|f| not f =~ /\($|^\)/}
     .delete_if {|f| f.gsub(/\(\)/,"") =~ /\)\(/ }
 end
@@ -165,6 +178,22 @@ class String
       end
     end
     m[j,i]
+  end
+
+  def length_of_last_word
+    split(/\s+/).last.size
+  end
+
+  def phone_combinations(res=nil)
+    return res.first if res and res.first.size == 3**self.size
+    letters = {"0" => "", "1" => "", "2" => "abc", "3" => "def", 
+      "4" => "ghi", "5" => "jkl", "6" => "mno", "7" => "pqrs", 
+      "8" => "tuv", "9" => "wxyz"}
+    arr = res ? res : split("").map{|f| letters[f]}.map {|f| f.split("")}
+    combine = lambda {|s1,s2| res = [] ; s1.each {|f| s2.map {|g| res << [f,g]}} ; res.map(&:join)}
+    c = arr[1] && combine.call(arr[0],arr[1])
+    arr.insert(0, c) and arr.delete_at(1) and arr.delete_at(1) if c
+    phone_combinations(arr)
   end
 end
 
@@ -300,6 +329,37 @@ describe "LeetCode" do
     900.to_roman.must_equal("CM")
     998.to_roman.must_equal("CMXCVIII")
     1712.to_roman.must_equal("MDCCXII")
+  end
+
+  it "Jump Game" do
+    [2,3,1,1,4].jump_game.must_equal(true)
+    [3,2,1,0,4].jump_game.must_equal(false)
+    [2,3,1,2,4,1,2,0,0,0,0].jump_game.must_equal(false)
+    [1,1,1,1,1].jump_game.must_equal(true)
+    [4,1,1,1,2,2,0,0].jump_game.must_equal(true)
+    [2,1,0,1,1].jump_game.must_equal(false)
+  end
+
+  it "Jump Game II" do
+    [2,3,1,1,4].jump_game(:min).must_equal(2)
+    [3,2,1,0,4].jump_game(:min).must_equal(false)
+    [1,1,1,1,1].jump_game(:min).must_equal(4)
+    [4,1,2,1,3,2,0,0].jump_game(:min).must_equal(2)
+    [4,1,1,1,4,1,1,1,0].jump_game(:min).must_equal(2)
+  end
+
+  it "Length Of Last Word" do
+    "Hello World".length_of_last_word.must_equal(5)
+    "This one was way too easy".length_of_last_word.must_equal(4)
+  end
+
+  it "Letter Combinations Of A Phone Number" do
+    "23".phone_combinations.must_equal(["ad", "ae", "af", "bd", "be", "bf", "cd", "ce", "cf"])
+    "234".phone_combinations.must_equal(["adg", "adh", "adi", "aeg", "aeh", "aei", "afg", "afh", 
+      "afi", "bdg", "bdh", "bdi", "beg", "beh", "bei", "bfg", "bfh", "bfi", "cdg", "cdh", "cdi", 
+      "ceg", "ceh", "cei", "cfg", "cfh", "cfi"])
+    "2345".phone_combinations.size.must_equal(3**4)
+    "23456".phone_combinations.size.must_equal(3**5)
   end
 
 end
