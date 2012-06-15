@@ -3,6 +3,8 @@
 
 require 'minitest/spec'
 require 'minitest/autorun'
+require 'benchmark'
+require 'matrix'
 
 
 class Array
@@ -87,6 +89,25 @@ class Array
     end
     jump_game(type, next_res, goal)
   end
+
+  def longest_prefix
+    i = 0
+    while i < size
+      self[i] = nil unless (self-[self[i]]).any? {|f| f and f.split("").first == self[i].split("").first}
+      i+=1
+    end
+    delete_if(&:nil?)
+    res = []
+    each do |x|
+      aa = dup
+      b = x.split("").each_with_index.reduce(-1) do |acc, (f,k)|
+        aa.delete(x) and aa.delete_if {|y| y.split("").first != f} if k == 0
+        aa.any? {|g| g.split("")[k] == f} ? acc+=1 : (break acc)
+      end
+      res << x[0..b] if b
+    end
+    res.uniq.sort_by(&:size).last
+  end
 end
 
 
@@ -154,7 +175,6 @@ def parentheses(n)
 end
 
 
-require 'matrix'
 # patching to allow mutability
 class Matrix 
   def []=(i, j, x) 
@@ -184,6 +204,11 @@ class String
     split(/\s+/).last.size
   end
 
+  # this is the recursive version, it works until 3**5 and then it throws stack too deep errors
+  # it seems tail call optimization exists in 1.9 but isn't on by default :-(
+  # recursion is sort of flaky in Ruby, i have been spoiled by Clojure, need to get back to it
+  # anyway the iterative version is cleaner
+=begin
   def phone_combinations(res=nil)
     return res.first if res and res.first.size == 3**self.size
     letters = {"0" => "", "1" => "", "2" => "abc", "3" => "def", 
@@ -195,8 +220,18 @@ class String
     arr.insert(0, c) and arr.delete_at(1) and arr.delete_at(1) if c
     phone_combinations(arr)
   end
-end
+=end
 
+  def phone_combinations
+    letters = {"0" => "", "1" => "", "2" => "abc", "3" => "def", 
+      "4" => "ghi", "5" => "jkl", "6" => "mno", "7" => "pqrs", 
+      "8" => "tuv", "9" => "wxyz"}
+    a = split("").map{|f| letters[f]}.map {|f| f.split("")}.delete_if(&:empty?)
+    combine = lambda {|s1,s2| s1.reduce([]) {|r,f| s2.map {|g| r << [f,g]} ;r}.map(&:join)}
+    a[0] = combine.call(a[0], a[1]) and a.delete_at(1) while a.size != 1
+    a.first
+  end
+end
 
 
 class Integer
@@ -360,9 +395,24 @@ describe "LeetCode" do
       "ceg", "ceh", "cei", "cfg", "cfh", "cfi"])
     "2345".phone_combinations.size.must_equal(3**4)
     "23456".phone_combinations.size.must_equal(3**5)
+    "234567".phone_combinations.size.must_equal((3**5)*4)
+    "2345678".phone_combinations.size.must_equal((3**6)*4)
+    "23456789".phone_combinations.size.must_equal((3**6)*4*4)
+    "012345".phone_combinations.size.must_equal("2345".phone_combinations.size)
+    time = Benchmark.realtime {"23456789".phone_combinations}
+    p "Time elapsed for generating 11664 phone combinations: #{time*1000} milliseconds"
   end
 
+  it "Longest Common Prefix" do
+    a = ['papillon', 'papyrus', "calife", 'voiture', "abd", 'qwertz', 'papoteur', 
+      "voilure", "yyyy", "calipso", "abc"]
+    a.longest_prefix.must_equal("cali")
+  end
+
+
 end
+
+
 
 
 
