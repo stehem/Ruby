@@ -231,6 +231,32 @@ class String
     a[0] = combine.call(a[0], a[1]) and a.delete_at(1) while a.size != 1
     a.first
   end
+
+  def palindromic_substring
+    res, i = [], 0
+    while i < size - 1
+      j = i
+      while include?(self[i..j].reverse)
+        res << self[i..j] if self[i..j].size >= 2
+        j+=1 
+      end
+      i+=1
+    end
+    res.sort_by(&:size).last
+  end
+
+  def substring_without_repeat
+    res, i = [], 0
+    while i < size - 1
+      j = i
+      while self[i..j].split("").uniq == self[i..j].split("") and j < size
+        res << self[i..j] if self[i..j] != ""
+        j+=1 
+      end
+      i+=1
+    end
+    res.delete_if {|f| f.size < res.sort_by(&:size).last.size}.uniq
+  end
 end
 
 
@@ -409,6 +435,19 @@ describe "LeetCode" do
     a.longest_prefix.must_equal("cali")
   end
 
+  it "Longest Palindromic Substring" do
+    "qwertzlneveroddorevenasdfgyxcvbn".palindromic_substring.must_equal("neveroddoreven")
+    "qweasdyxclrisetovotesirpoiuzlkjhgmnb".palindromic_substring.must_equal("risetovotesir")
+    "qwertzuamanaplanacanalpanamayxcvbnmasdfghjkl".palindromic_substring.must_equal("amanaplanacanalpanama")
+    "qwertzuasdfgyxcvbn".palindromic_substring.must_equal(nil)
+  end
+
+  it "Longest Substring Without Repeating Characters" do
+    "abcabcbb".substring_without_repeat.must_equal(["abc", "bca", "cab"])
+    "bbbbb".substring_without_repeat.must_equal(["b"])
+    "qwertzaaddhjkjjk".substring_without_repeat.must_equal(["qwertza"])
+    "qqqqqqqqqqqqqqa".substring_without_repeat.must_equal(["qa"])
+  end
 
 end
 
