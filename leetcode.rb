@@ -108,6 +108,19 @@ class Array
     end
     res.uniq.sort_by(&:size).last
   end
+
+  def maximum_subarray
+    res, i = [[0]], 0
+    while i < size - 1
+      j = i + 1
+      while j < size
+        res << self[i..j] and res.shift if self[i..j].reduce(:+) > res.last.reduce(:+)  
+        j+=1 
+      end
+      i+=1
+    end
+    res.first
+  end
 end
 
 
@@ -180,6 +193,48 @@ class Matrix
   def []=(i, j, x) 
     @rows[i][j] = x 
   end 
+
+  def maximal_rectangle
+    # it is decently optimized for a bruteforceish solution but i'm sure there is a 
+    # more elegant way to solve this, anyway it will do a 50x50 matrix in about 5 secs
+    m,res = self, []
+    m.each_with_index do |e, r, c|
+      next if [e, m[r+1,c], m[r,c+1], m[r+1,c+1]].any? {|f| f.nil? or f == 0}
+      res << [r,c]
+    end
+
+    only_ones = lambda do |r1,c1,r2,c2|
+      not [].tap {|a| (c1..c2).to_a.each{|c| (r1..r2).to_a.each {|r| a << m[r,c]}}}.include?(0)
+    end
+
+    nb_of_ones = lambda {|r1,c1,r2,c2| (c2+1-c1)*(r2+1-r1)}
+
+    corner = [res.sort_by(&:first).last.first+1,res.sort_by(&:last).last.last+1] 
+
+    result = []
+    res.each do |r|
+      xx,yy = corner.first,corner.last
+
+      while xx > r.first and yy > r.last
+        x,y = xx,yy
+        while x > r.first
+          result << [r, [x,y]] if m[x,y] != 0 and only_ones.call(r.first,r.last,x,y) 
+          x-=1
+        end
+        while y > r.last
+          x = xx
+          result << [r, [x,y]] if m[x,y] != 0 and only_ones.call(r.first,r.last,x,y) 
+          y-=1
+        end
+        xx-=1 and yy-=1
+      end
+    end
+
+    result = result.uniq
+    #lazy
+    max = result.map {|f| nb_of_ones.call(f.first.first,f.first.last,f.last.first,f.last.last)}.max
+    result.delete_if {|f| nb_of_ones.call(f.first.first,f.first.last,f.last.first,f.last.last) < max}
+  end
 end
 
 class String
@@ -235,7 +290,7 @@ class String
   def palindromic_substring
     res, i = [], 0
     while i < size - 1
-      j = i
+      j = i + 1
       while include?(self[i..j].reverse)
         res << self[i..j] if self[i..j].size >= 2
         j+=1 
@@ -256,6 +311,24 @@ class String
       i+=1
     end
     res.delete_if {|f| f.size < res.sort_by(&:size).last.size}.uniq
+  end
+
+  def longest_valid_parentheses
+    a, i, res = split(""), 0, []
+    while i < a.size
+      j = i + 1
+      while j < a.size
+        res << a[i..j] and j+=1
+      end
+      i+=1
+    end
+    res.delete_if {|f| f.size.odd?}
+      .delete_if {|f| f.count("(") != f.count(")")}
+      .delete_if {|f| f.first == ")" or f.last == "("}
+      .map! {|f| f.each_slice(f.size/2).to_a}
+      .delete_if {|f| f.first.count(")") > f.first.count("(") or f.last.count("(") > f.last.count(")")}
+      .map! {|f| f.join("")}
+      .sort_by(&:size).last
   end
 end
 
@@ -449,7 +522,69 @@ describe "LeetCode" do
     "qqqqqqqqqqqqqqa".substring_without_repeat.must_equal(["qa"])
   end
 
+  it "Longest Valid Parentheses" do
+    "))()))((()".longest_valid_parentheses.must_equal("()")
+    "))()()".longest_valid_parentheses.must_equal("()()")
+    "(()".longest_valid_parentheses.must_equal("()")
+    ")()())".longest_valid_parentheses.must_equal("()()")
+    ")((())))".longest_valid_parentheses.must_equal("((()))")
+    ")((()))())".longest_valid_parentheses.must_equal("((()))()")
+  end
+
+
+  it "Maximal Rectangle" do
+    m = Matrix[
+      [0,  1,  1,  0,  1],
+      [1,  1,  0,  1,  0],
+      [0,  1,  1,  1,  1],
+      [1,  1,  1,  1,  0],
+      [1,  1,  1,  1,  0],
+      [0,  0,  0,  0,  0]
+    ]
+    m.maximal_rectangle.must_equal([[[2,1], [4,3]]])
+    m = Matrix[
+      [0,  1,  1,  0,  1],
+      [1,  1,  0,  1,  0],
+      [0,  1,  1,  1,  1],
+      [1,  1,  1,  1,  0],
+      [0,  1,  1,  0,  0],
+      [0,  0,  0,  0,  0]
+    ]
+    m.maximal_rectangle.must_equal([[[2,1], [3,3]], [[2,1], [4,2]]])
+    m = Matrix[
+      [0,  1,  1,  0,  1],
+      [1,  1,  0,  1,  0],
+      [0,  1,  1,  1,  1],
+      [1,  1,  1,  1,  1],
+      [0,  1,  0,  1,  0],
+      [0,  0,  0,  0,  0]
+    ]
+    m.maximal_rectangle.must_equal([[[2,1], [3,4]]])
+    m = Matrix[
+      [1,  1,  1,  0,  0],
+      [1,  1,  1,  0,  0],
+      [0,  0,  0,  0,  0],
+      [0,  0,  0,  0,  0],
+      [0,  0,  1,  1,  1],
+      [0,  0,  1,  1,  1]
+    ]
+    m.maximal_rectangle.must_equal([[[0,0], [1,2]], [[4,2], [5,4]]])
+    time = Benchmark.realtime {Matrix.build(20,20) {rand 2}.maximal_rectangle}
+    p "Time elapsed for analysing a 20x20 matrix: #{time*1000} milliseconds"
+  end
+
+  it "Maximum Subarray" do
+    [-2,1,-3,4,-1,2,1,-5,4].maximum_subarray.must_equal([4, -1, 2, 1])
+    [0,9,-10,5,5,5,-7,1,2,4].maximum_subarray.must_equal([5,5,5])
+    [0,9,-8,5,5,5,-7,1,2,4].maximum_subarray.must_equal([0,9,-8,5,5,5])
+    [-1,-2,3,3,3,3,-2].maximum_subarray.must_equal([3,3,3,3])
+    time = Benchmark.realtime {[].tap {|f| 100.times {f << rand(11)}}.maximum_subarray}
+    p "Time elapsed for analysing a 100 elements array: #{time*1000} milliseconds"
+  end
+
 end
+
+
 
 
 
