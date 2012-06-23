@@ -83,9 +83,9 @@ class Array
     end
     return false if res.empty?
     next_ = lambda {|i| (i+1..i+self[i]).to_a}
-    next_a = lambda {|arr| next_.call(arr.last).map {|f| arr + [f]}}
+    next_a = lambda {|arr| next_[arr.last].map {|f| arr + [f]}}
     next_res = res.reduce([]) do |acc,r|
-      next_a.call(r).each {|s| acc << s} ; acc
+      next_a[r].each {|s| acc << s} ; acc
     end
     jump_game(type, next_res, goal)
   end
@@ -218,12 +218,12 @@ class Matrix
       while xx > r.first and yy > r.last
         x,y = xx,yy
         while x > r.first
-          result << [r, [x,y]] if m[x,y] != 0 and only_ones.call(r.first,r.last,x,y) 
+          result << [r, [x,y]] if m[x,y] != 0 and only_ones[r.first,r.last,x,y] 
           x-=1
         end
         while y > r.last
           x = xx
-          result << [r, [x,y]] if m[x,y] != 0 and only_ones.call(r.first,r.last,x,y) 
+          result << [r, [x,y]] if m[x,y] != 0 and only_ones[r.first,r.last,x,y] 
           y-=1
         end
         xx-=1 and yy-=1
@@ -232,8 +232,8 @@ class Matrix
 
     result = result.uniq
     #lazy
-    max = result.map {|f| nb_of_ones.call(f.first.first,f.first.last,f.last.first,f.last.last)}.max
-    result.delete_if {|f| nb_of_ones.call(f.first.first,f.first.last,f.last.first,f.last.last) < max}
+    max = result.map {|f| nb_of_ones[f.first.first,f.first.last,f.last.first,f.last.last]}.max
+    result.delete_if {|f| nb_of_ones[f.first.first,f.first.last,f.last.first,f.last.last] < max}
   end
 end
 
@@ -283,7 +283,7 @@ class String
       "8" => "tuv", "9" => "wxyz"}
     a = split("").map{|f| letters[f]}.map {|f| f.split("")}.delete_if(&:empty?)
     combine = lambda {|s1,s2| s1.reduce([]) {|r,f| s2.map {|g| r << [f,g]} ;r}.map(&:join)}
-    a[0] = combine.call(a[0], a[1]) and a.delete_at(1) while a.size != 1
+    a[0] = combine[a[0], a[1]] and a.delete_at(1) while a.size != 1
     a.first
   end
 
