@@ -235,6 +235,20 @@ class Matrix
     max = result.map {|f| nb_of_ones[f.first.first,f.first.last,f.last.first,f.last.last]}.max
     result.delete_if {|f| nb_of_ones[f.first.first,f.first.last,f.last.first,f.last.last] < max}
   end
+
+  def maximum_path
+    children = lambda do |path| 
+      d, r = [path.last.first+1, path.last.last], [path.last.first, path.last.last+1]
+      down = d if eval "self#{d}" 
+      right = r if eval "self#{r}"
+      [down, right]
+    end
+    paths = [[[0,0]]]
+    while paths.first.size < (self.column(0).size + self.row(0).size - 1)
+      paths = [].tap {|res| paths.each {|p| children[p].each {|c| res << p + [c] unless (p + [c]).include?(nil)}}}
+    end
+    paths.map {|path| [path.map {|p| eval "self#{p}"}.reduce(:+), path]}.sort_by(&:first).last.last
+  end
 end
 
 class String
@@ -570,7 +584,7 @@ describe "LeetCode" do
     ]
     m.maximal_rectangle.must_equal([[[0,0], [1,2]], [[4,2], [5,4]]])
     time = Benchmark.realtime {Matrix.build(20,20) {rand 2}.maximal_rectangle}
-    p "Time elapsed for analysing a 20x20 matrix: #{time*1000} milliseconds"
+    p "Time elapsed for finding the maximal rectangle in a 20x20 matrix: #{time*1000} milliseconds"
   end
 
   it "Maximum Subarray" do
@@ -580,6 +594,30 @@ describe "LeetCode" do
     [-1,-2,3,3,3,3,-2].maximum_subarray.must_equal([3,3,3,3])
     time = Benchmark.realtime {[].tap {|f| 100.times {f << rand(11)}}.maximum_subarray}
     p "Time elapsed for analysing a 100 elements array: #{time*1000} milliseconds"
+  end
+
+  it "Maximum Path Sum" do
+    m = Matrix[
+      [1,  3,  1,  0,  0],
+      [9,  8,  1,  0,  0],
+      [5,  9,  8,  0,  0],
+      [0,  1,  8,  0,  0],
+      [0,  0,  9,  9,  1],
+      [0,  0,  1,  8,  1]
+    ]
+    m.maximum_path.must_equal([[0,0], [1,0], [1,1], [2,1], [2,2], [3,2], [4,2], [4,3], [5,3], [5,4]])
+    m = Matrix[
+      [1,  1,  1,  1,  1],
+      [0,  0,  0,  0,  1],
+      [0,  0,  0,  0,  1],
+      [0,  0,  0,  0,  1],
+      [0,  0,  0,  0,  1],
+      [0,  0,  0,  0,  1]
+    ]
+    m.maximum_path.must_equal([[0,0], [0,1], [0,2], [0,3], [0,4], [1,4], [2,4], [3,4], [4,4], [5,4]])
+    # only 6x6 to keep things fast because the nb of paths quickly gets enormous
+    time = Benchmark.realtime {Matrix.build(6,6) {rand 11}.maximum_path}
+    p "Time elapsed for finding the minimum sum path of a 6x6 matrix: #{time*1000} milliseconds"
   end
 
 end
