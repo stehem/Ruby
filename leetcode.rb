@@ -244,7 +244,7 @@ class Matrix
       [down, right]
     end
     paths = [[[0,0]]]
-    while paths.first.size < (self.column(0).size + self.row(0).size - 1)
+    while paths.first.size < (column(0).size + row(0).size - 1)
       paths = [].tap {|res| paths.each {|p| children[p].each {|c| res << p + [c] unless (p + [c]).include?(nil)}}}
     end
     paths.map {|path| [path.map {|p| eval "self#{p}"}.reduce(:+), path]}.sort_by(&:first).last.last
@@ -343,6 +343,25 @@ class String
       .delete_if {|f| f.first.count(")") > f.first.count("(") or f.last.count("(") > f.last.count(")")}
       .map! {|f| f.join("")}
       .sort_by(&:size).last
+  end
+
+  def window_substring(target)
+    # complexity seems to be O(n) : 1000 chars => 10ms, 5000 chars => 60ms, 25000 chars => 500ms
+    str, tar, subs, i = self.split(""), target.split(""), [], 0
+    find_next_index = lambda do |arr, start=nil| 
+      arr_ = arr.dup 
+      arr_[0] = nil unless start 
+      arr_.find_index {|l| tar.include?(l)}
+    end
+    last_index = lambda {|arr| fletter = arr[0] ; (tar-[fletter]).map{|l| arr.index(l)}.reject(&:nil?).sort.last}
+    while subs.empty? ? true : tar.all? {|f| subs.last.include?(f)}
+      next_index = i == 0 ? find_next_index[str, :start] : find_next_index[str]
+      str = str[next_index..-1]
+      sub = str[0..last_index[str]]
+      subs << sub
+      i+=1
+    end
+    subs.pop and subs.sort_by(&:size).first.join("")
   end
 end
 
@@ -618,6 +637,18 @@ describe "LeetCode" do
     # only 6x6 to keep things fast because the nb of paths quickly gets enormous
     time = Benchmark.realtime {Matrix.build(6,6) {rand 11}.maximum_path}
     p "Time elapsed for finding the minimum sum path of a 6x6 matrix: #{time*1000} milliseconds"
+  end
+
+  it "Minimum Window Substring" do
+    "ADOBECODEBANC".window_substring("ABC").must_equal("BANC")
+    "QWERASDFBSFSDCQWEERWABCOITUAKJLB".window_substring("ABC").must_equal("ABC")
+    "QWERASDFBSFSDCQWEERWCBQAOITUAKJLB".window_substring("ABC").must_equal("CBQA")
+    "WWWXAAYBBZPOUJXCYCZQWEQQ".window_substring("XYZ").must_equal("XCYCZ")
+    "WWWXAAYBBZPOUJZCYACXQWEQQ".window_substring("XYZ").must_equal("ZCYACX")
+    "AABC".window_substring("ABC").must_equal("ABC")
+    "AABBC".window_substring("ABC").must_equal("ABBC")
+    time = Benchmark.realtime {str = ""; 5000.times {str << (("A".."Z").to_a)[rand(26)]}; str.window_substring("YABC")}
+    p "Time elapsed for finding the minimum window substring of a 5000 chars string: #{time*1000} milliseconds"
   end
 
 end
